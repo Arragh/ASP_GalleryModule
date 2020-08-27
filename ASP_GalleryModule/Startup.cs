@@ -1,8 +1,6 @@
 using ASP_GalleryModule.Models.Service;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,17 +27,12 @@ namespace ASP_GalleryModule
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            //RouteBuilder routeBuilder = new RouteBuilder(app);
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
             app.UseStaticFiles();
-
-            //routeBuilder.MapRoute("~/wwwroot/", async context => await context.Response.WriteAsync("{WWWROOT} route is using..."));
-            //app.UseRouter(routeBuilder.Build());
 
             app.UseRouting();
 

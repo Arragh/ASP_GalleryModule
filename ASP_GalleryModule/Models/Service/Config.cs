@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace ASP_GalleryModule.Models.Service
+﻿namespace ASP_GalleryModule.Models.Service
 {
     public class Config
     {

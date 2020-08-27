@@ -1,8 +1,5 @@
 ﻿using ASP_GalleryModule.Models.Gallery;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ASP_GalleryModule.ViewModels.Gallery
 {
