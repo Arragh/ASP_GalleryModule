@@ -1,0 +1,39 @@
+﻿@model ASP_GalleryModule.ViewModels.Gallery.IndexViewModel
+
+<h2>Gallery/Index</h2>
+@Html.ActionLink("Создать галерею", "AddGallery", "Gallery")
+<br />
+<br />
+
+<table border="1" width="100%">
+    @foreach (var gallery in Model.Galleries)
+    {
+        <tr>
+            <td width="300">
+                КАРТИНКА-ПРЕВЬЮШКА
+            </td>
+            <td>
+                @Html.ActionLink(gallery.GalleryTitle, "ViewGallery", "Gallery", new { galleryId = gallery.Id })<br />
+                @gallery.GalleryDescription
+            </td>
+        </tr>
+    }
+</table>
+
+<br />
+<br />
+<center>
+    @for (int i = 1; i <= Model.TotalPages; i++)
+    {
+        if (i != Model.CurrentPage)
+        {
+            @Html.ActionLink(i.ToString(), "Index", new { pageNumber = i })
+            <span>&nbsp;</span>
+        }
+        else
+        {
+            @i
+            <span>&nbsp;</span>
+        }
+    }
+</center>
