@@ -110,7 +110,7 @@ namespace ASP_GalleryModule.Controllers
         }
         #endregion
 
-        #region Просмотр галереи [GET]
+        #region Просмотр галереи / Добавление изображений [GET]
         [HttpGet]
         public async Task<IActionResult> ViewGallery(Guid galleryId, string imageToDeleteName = null)
         {
@@ -177,17 +177,33 @@ namespace ASP_GalleryModule.Controllers
         }
         #endregion
 
-        #region Просмотр галереи [POST]
+        #region Просмотр галереи / Добавление изображений [POST]
         [HttpPost]
         public async Task<IActionResult> ViewGallery(ViewGalleryViewModel model, IFormFileCollection uploads)
         {
-            // Проверяем, чтобы размер файлов не превышал заданный объем
-            foreach (var file in uploads)
+            int imagesCount = 0;
+            foreach (var image in cmsDB.GalleryImages)
             {
-                if (file.Length > 2097152)
+                if (image.GalleryId == model.GalleryId)
                 {
-                    ModelState.AddModelError("GalleryImage", $"Файл \"{file.FileName}\" превышает установленный лимит 2MB.");
-                    break;
+                    imagesCount++;
+                }
+            }
+
+            if (uploads.Count > Config.ImagesPerGallery - imagesCount)
+            {
+                ModelState.AddModelError("GalleryImage", $"Вы пытаетесь загрузить {uploads.Count} изображений. Лимит галереи {Config.ImagesPerGallery} изображений. Вы можете загрузить еще {Config.ImagesPerGallery - imagesCount} изображений.");
+            }
+            else
+            {
+                // Проверяем, чтобы размер файлов не превышал заданный объем
+                foreach (var file in uploads)
+                {
+                    if (file.Length > 2097152)
+                    {
+                        ModelState.AddModelError("GalleryImage", $"Файл \"{file.FileName}\" превышает установленный лимит 2MB.");
+                        break;
+                    }
                 }
             }
 
@@ -195,15 +211,15 @@ namespace ASP_GalleryModule.Controllers
             if (ModelState.IsValid)
             {
                 // Создаем экземпляр класса News и присваиваем ему значения
-                Gallery gallery = new Gallery()
-                {
-                    GalleryTitle = model.GalleryTitle,
-                    GalleryDescription = model.GalleryDescription,
-                    // Скрытые поля
-                    Id = model.GalleryId,
-                    GalleryDate = model.GalleryDate,
-                    UserName = model.UserName
-                };
+                //Gallery gallery = new Gallery()
+                //{
+                //    GalleryTitle = model.GalleryTitle,
+                //    GalleryDescription = model.GalleryDescription,
+                //    // Скрытые поля
+                //    Id = model.GalleryId,
+                //    GalleryDate = model.GalleryDate,
+                //    UserName = model.UserName
+                //};
 
                 // Далее начинаем обработку загружаемых изображений
                 List<GalleryImage> galleryImages = new List<GalleryImage>();
@@ -274,7 +290,7 @@ namespace ASP_GalleryModule.Controllers
                             ImageName = newFileName,
                             ImagePathNormal = pathNormal,
                             ImagePathScaled = pathScaled,
-                            GalleryId = gallery.Id
+                            GalleryId = model.GalleryId //gallery.Id
                         };
                         // Добавляем объект newsImage в список newsImages
                         galleryImages.Add(galleryImage);
@@ -285,9 +301,10 @@ namespace ASP_GalleryModule.Controllers
                 if (galleryImages != null && galleryImages.Count > 0)
                 {
                     await cmsDB.GalleryImages.AddRangeAsync(galleryImages);
+                    await cmsDB.SaveChangesAsync();
                 }
-                cmsDB.Galleries.Update(gallery);
-                await cmsDB.SaveChangesAsync();
+                //cmsDB.Galleries.Update(gallery);
+                //await cmsDB.SaveChangesAsync();
 
                 // Редирект на главную страницу
                 //return RedirectToAction("Index", "News");
@@ -320,127 +337,6 @@ namespace ASP_GalleryModule.Controllers
             model.ImagesCount = images.Count;
 
             // Возврат модели в представление в случае, если запорится валидация
-            return View(model);
-        }
-        #endregion
-
-        #region Добавить изображение [GET]
-        public IActionResult AddImage(Guid galleryId)
-        {
-            ViewBag.GalleryId = galleryId;
-
-            return View();
-        }
-        #endregion
-
-        #region Добавить изображение [POST]
-        [HttpPost]
-        public async Task<IActionResult> AddImage(AddImageViewModel model, IFormFileCollection uploads)
-        {
-            // Проверяем, чтобы размер файлов не превышал заданный объем
-            foreach (var file in uploads)
-            {
-                if (file.Length > 2097152)
-                {
-                    ModelState.AddModelError("GalleryImage", $"Файл \"{file.FileName}\" превышает установленный лимит 2MB.");
-                    break;
-                }
-            }
-
-            // Если все в порядке, заходим в тело условия
-            if (ModelState.IsValid)
-            {
-                // Далее начинаем обработку изображений
-                List<GalleryImage> galleryImages = new List<GalleryImage>();
-                foreach (var uploadedImage in uploads)
-                {
-                    // Если размер входного файла больше 0, заходим в тело условия
-                    if (uploadedImage.Length > 0)
-                    {
-                        // Создаем новый объект класса FileInfo из полученного изображения для дальнейшей обработки
-                        FileInfo imgFile = new FileInfo(uploadedImage.FileName);
-                        // Приводим расширение к нижнему регистру (если оно было в верхнем)
-                        string imgExtension = imgFile.Extension.ToLower();
-                        // Генерируем новое имя для файла
-                        string newFileName = Guid.NewGuid() + imgExtension;
-                        // Пути сохранения файла
-                        string pathNormal = "/files/images/normal/" + newFileName; // изображение исходного размера
-                        string pathScaled = "/files/images/scaled/" + newFileName; // уменьшенное изображение
-
-                        // В операторе try/catch делаем уменьшенную копию изображения.
-                        // Если входным файлом окажется не изображение, нас перекинет в блок CATCH и выведет сообщение об ошибке
-                        try
-                        {
-                            // Создаем объект класса SixLabors.ImageSharp.Image и грузим в него полученное изображение
-                            using (Image image = Image.Load(uploadedImage.OpenReadStream()))
-                            {
-                                // Создаем уменьшенную копию и обрезаем её
-                                var clone = image.Clone(x => x.Resize(new ResizeOptions
-                                {
-                                    Mode = ResizeMode.Crop,
-                                    Size = new Size(300, 200)
-                                }));
-                                // Сохраняем уменьшенную копию
-                                await clone.SaveAsync(_appEnvironment.WebRootPath + pathScaled, new JpegEncoder { Quality = 50 });
-                                // Сохраняем исходное изображение
-                                await image.SaveAsync(_appEnvironment.WebRootPath + pathNormal);
-                            }
-
-                        }
-                        // Если вдруг что-то пошло не так (например, на вход подало не картинку), то выводим сообщение об ошибке
-                        catch
-                        {
-                            // Создаем сообщение об ошибке для вывода пользователю
-                            ModelState.AddModelError("GalleryImage", $"Файл {uploadedImage.FileName} имеет неверный формат.");
-
-                            // Удаляем только что созданные файлы (если ошибка возникла не на первом файле)
-                            foreach (var image in galleryImages)
-                            {
-                                // Исходные (полноразмерные) изображения
-                                FileInfo imageNormal = new FileInfo(_appEnvironment.WebRootPath + image.ImagePathNormal);
-                                if (imageNormal.Exists)
-                                {
-                                    imageNormal.Delete();
-                                }
-                                // И их уменьшенные копии
-                                FileInfo imageScaled = new FileInfo(_appEnvironment.WebRootPath + image.ImagePathScaled);
-                                if (imageScaled.Exists)
-                                {
-                                    imageScaled.Delete();
-                                }
-                            }
-
-                            // Возвращаем модель с сообщением об ошибке в представление
-                            return View(model);
-                        }
-
-                        // Создаем объект класса NewsImage со всеми параметрами
-                        GalleryImage galleryImage = new GalleryImage()
-                        {
-                            Id = Guid.NewGuid(),
-                            ImageName = newFileName,
-                            ImagePathNormal = pathNormal,
-                            ImagePathScaled = pathScaled,
-                            ImageDate = DateTime.Now,
-                            GalleryId = model.GalleryId
-                        };
-                        // Добавляем объект newsImage в список newsImages
-                        galleryImages.Add(galleryImage);
-                    }
-                }
-
-                // Если в процессе выполнения не возникло ошибок, сохраняем всё в БД
-                if (galleryImages != null && galleryImages.Count > 0)
-                {
-                    await cmsDB.GalleryImages.AddRangeAsync(galleryImages);
-                    await cmsDB.SaveChangesAsync();
-                }
-
-                // Редирект на главную страницу
-                //return RedirectToAction("ViewGallery", "Gallery", model);
-            }
-            // Возврат модели в представление в случае, если запорится валидация
-            //return RedirectToAction("ViewGallery", "Gallery", new AddImageViewModel() { GalleryId = galleryId });
             return View(model);
         }
         #endregion

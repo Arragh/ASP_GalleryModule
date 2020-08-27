@@ -1,40 +1,50 @@
 ﻿@model ASP_GalleryModule.ViewModels.Gallery.ViewGalleryViewModel
+@using ASP_GalleryModule.Models.Service
+
+<h3>@Model.GalleryTitle</h3>
+<p>@Model.GalleryDescription</p><br />
+@{ int count = Config.ImagesPerGallery - Model.ImagesCount; }
+<p>Доступный лимит для загрузки: @count</p><br />
 
 <form asp-controller="Gallery" asp-action="ViewGallery" method="post" enctype="multipart/form-data">
     <div>
         <input type="hidden" asp-for="GalleryId" value="@Model.GalleryId" />
         <input type="hidden" asp-for="GalleryDate" value="@Model.GalleryDate" />
         <input type="hidden" asp-for="UserName" value="@Model.UserName" />
-        <label asp-for="GalleryTitle"></label><br />
+        <input type="hidden" asp-for="GalleryTitle" value="@Model.GalleryTitle" />
+        <input type="hidden" asp-for="GalleryDescription" value="@Model.GalleryDescription" />
+        @*<label asp-for="GalleryTitle"></label><br />
         <input type="text" asp-for="GalleryTitle" width="300" />
-        @Html.ValidationMessageFor(t => t.GalleryTitle)<br />
+        @Html.ValidationMessageFor(t => t.GalleryTitle)<br />*@
     </div>
-    <div>
+    @*<div>
         <label asp-for="GalleryDescription"></label><br />
         <textarea asp-for="GalleryDescription" rows="30" cols="100"></textarea>
         @Html.ValidationMessageFor(b => b.GalleryDescription)<br />
-    </div>
+    </div>*@
     <div>
         <font color="red">@Html.ValidationMessageFor(f => f.GalleryImage)</font><br />
-        @if (Model.ImagesCount < 12)
+        @if (Model.ImagesCount < Config.ImagesPerGallery)
         {
             <input type="file" name="uploads" accept=".jpg,.jpeg,.png" multiple="" /><br />
         }
     </div>
     <div>
-        <input type="submit" value="Сохранить" />
+        <input type="submit" value="Добавить" />
     </div>
 </form>
 <br />
 <br />
-@if (Model.GalleryImages != null && Model.GalleryImages.Count > 0)
-{
-    foreach (var image in Model.GalleryImages)
+<center>
+    @if (Model.GalleryImages != null && Model.GalleryImages.Count > 0)
     {
-        <a href="@Url.Content(image.ImagePathNormal)"><img src="@Url.Content(image.ImagePathScaled)" /></a>
-        @Html.ActionLink("X", "ViewGallery", "Gallery", new { galleryId = Model.GalleryId, imageToDeleteName = image.ImageName })
+        foreach (var image in Model.GalleryImages)
+        {
+            <a href="@Url.Content(image.ImagePathNormal)" target="_blank"><img src="@Url.Content(image.ImagePathScaled)" /></a>
+            @Html.ActionLink("X", "ViewGallery", "Gallery", new { galleryId = Model.GalleryId, imageToDeleteName = image.ImageName })
+        }
     }
-}
+</center>
 
 @section scripts
 {
