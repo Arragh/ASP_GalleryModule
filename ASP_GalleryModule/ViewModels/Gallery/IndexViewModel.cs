@@ -8,6 +8,5 @@ namespace ASP_GalleryModule.ViewModels.Gallery
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
         public List<Models.Gallery.Gallery> Galleries { get; set; }
-        public List<GalleryImage> GalleryImages { get; set; }
     }
 }

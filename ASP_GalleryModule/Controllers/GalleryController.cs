@@ -45,28 +45,10 @@ namespace ASP_GalleryModule.Controllers
             // Создаем массив Id-шников записей для выборки изображений к ним
             Guid[] galleryIdArray = galleries.Select(n => n.Id).ToArray();
 
-            // Создаем список из изображений, которые будут поданы вместе со списом записей
-            List<GalleryImage> galleryImages = new List<GalleryImage>();
-
-            // Перебираем изображения в БД
-            foreach (var image in cmsDB.GalleryImages)
-            {
-                // Перебираем все элементы ранее созданного массива Guid[] newsIdArray
-                foreach (var galleryId in galleryIdArray)
-                {
-                    // Если данные совпадают, то кладём изображение в список для вывода на странице
-                    if (image.GalleryId == galleryId)
-                    {
-                        galleryImages.Add(image);
-                    }
-                }
-            }
-
             // Создаём модель для вывода на странице и кладём в неё все необходимые данные
             IndexViewModel model = new IndexViewModel()
             {
                 Galleries = galleries,
-                GalleryImages = galleryImages,
                 CurrentPage = pageNumber,
                 TotalPages = (int)Math.Ceiling(galleriesCount / (double)pageSize)
             };
@@ -166,13 +148,6 @@ namespace ASP_GalleryModule.Controllers
             };
             // Передаем модель в представление
             return View(model);
-
-            //List<GalleryImage> galleryImages = await cmsDB.GalleryImages.Where(i => i.GalleryId == galleryId).ToListAsync();
-
-            //ViewBag.GalleryId = galleryId;
-            //ViewBag.GalleryImages = galleryImages;
-
-            //return View();
         }
         #endregion
 
@@ -209,17 +184,6 @@ namespace ASP_GalleryModule.Controllers
             // Если все в порядке, заходим в тело условия
             if (ModelState.IsValid)
             {
-                // Создаем экземпляр класса News и присваиваем ему значения
-                //Gallery gallery = new Gallery()
-                //{
-                //    GalleryTitle = model.GalleryTitle,
-                //    GalleryDescription = model.GalleryDescription,
-                //    // Скрытые поля
-                //    Id = model.GalleryId,
-                //    GalleryDate = model.GalleryDate,
-                //    UserName = model.UserName
-                //};
-
                 // Далее начинаем обработку загружаемых изображений
                 List<GalleryImage> galleryImages = new List<GalleryImage>();
                 foreach (var uploadedImage in uploads)
@@ -302,11 +266,6 @@ namespace ASP_GalleryModule.Controllers
                     await cmsDB.GalleryImages.AddRangeAsync(galleryImages);
                     await cmsDB.SaveChangesAsync();
                 }
-                //cmsDB.Galleries.Update(gallery);
-                //await cmsDB.SaveChangesAsync();
-
-                // Редирект на главную страницу
-                //return RedirectToAction("Index", "News");
 
                 List<GalleryImage> images2 = new List<GalleryImage>();
                 foreach (var image in cmsDB.GalleryImages)
