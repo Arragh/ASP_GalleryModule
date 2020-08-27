@@ -122,9 +122,9 @@ namespace ASP_GalleryModule.Controllers
                 }
             }
 
-            // Создаем экземпляр класса News и присваиваем ему значения из БД
-            Gallery gallery = await cmsDB.Galleries.FirstAsync(n => n.Id == galleryId);
-            // Создаем список изображений из БД, закрепленных за выбранной новостью
+            // Создаем экземпляр класса Gallery и присваиваем ему значения из БД
+            Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == galleryId);
+            // Создаем список изображений из БД, закрепленных за выбранной галереей
             List<GalleryImage> images = new List<GalleryImage>();
             foreach (var image in cmsDB.GalleryImages)
             {
@@ -155,6 +155,7 @@ namespace ASP_GalleryModule.Controllers
         [HttpPost]
         public async Task<IActionResult> ViewGallery(ViewGalleryViewModel model, IFormFileCollection uploads)
         {
+            // Считаем общее количество изображений в галерее
             int imagesCount = 0;
             foreach (var image in cmsDB.GalleryImages)
             {
@@ -164,10 +165,12 @@ namespace ASP_GalleryModule.Controllers
                 }
             }
 
+            // Проверяем, не превышает ли количество загружаемых изображений допустимый лимит
             if (uploads.Count > Config.ImagesPerGallery - imagesCount)
             {
                 ModelState.AddModelError("GalleryImage", $"Вы пытаетесь загрузить {uploads.Count} изображений. Лимит галереи {Config.ImagesPerGallery} изображений. Вы можете загрузить еще {Config.ImagesPerGallery - imagesCount} изображений.");
             }
+            // Если всё в порядке, заходим в ELSE
             else
             {
                 // Проверяем, чтобы размер файлов не превышал заданный объем
@@ -246,16 +249,16 @@ namespace ASP_GalleryModule.Controllers
                             return View(model);
                         }
 
-                        // Создаем объект класса NewsImage со всеми параметрами
+                        // Создаем объект класса GalleryImage со всеми параметрами
                         GalleryImage galleryImage = new GalleryImage()
                         {
                             Id = Guid.NewGuid(),
                             ImageName = newFileName,
                             ImagePathNormal = pathNormal,
                             ImagePathScaled = pathScaled,
-                            GalleryId = model.GalleryId //gallery.Id
+                            GalleryId = model.GalleryId
                         };
-                        // Добавляем объект newsImage в список newsImages
+                        // Добавляем объект galleryImage в список galleryImages
                         galleryImages.Add(galleryImage);
                     }
                 }
@@ -267,6 +270,7 @@ namespace ASP_GalleryModule.Controllers
                     await cmsDB.SaveChangesAsync();
                 }
 
+                // Пересоздаем список изображений для вывода в представление, с учетом только что добавленных изображений
                 List<GalleryImage> images2 = new List<GalleryImage>();
                 foreach (var image in cmsDB.GalleryImages)
                 {
@@ -277,6 +281,8 @@ namespace ASP_GalleryModule.Controllers
                 }
                 model.GalleryImages = images2;
                 model.ImagesCount = images2.Count;
+
+                // Выводим обновленную модель в представление
                 return View(model);
             }
 
