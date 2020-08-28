@@ -148,20 +148,12 @@ namespace ASP_GalleryModule.Controllers
         [HttpPost]
         public async Task<IActionResult> ViewGallery(ViewGalleryViewModel model, IFormFileCollection uploads)
         {
-            // Считаем общее количество изображений в галерее
-            int imagesCount = 0;
-            foreach (var image in cmsDB.GalleryImages)
-            {
-                if (image.GalleryId == model.GalleryId)
-                {
-                    imagesCount++;
-                }
-            }
+            List<GalleryImage> images = await cmsDB.GalleryImages.Where(i => i.GalleryId == model.GalleryId).OrderByDescending(i => i.ImageDate).ToListAsync();
 
             // Проверяем, не превышает ли количество загружаемых изображений допустимый лимит
-            if (uploads.Count > Config.ImagesPerGallery - imagesCount)
+            if (uploads.Count > Config.ImagesPerGallery - images.Count)
             {
-                ModelState.AddModelError("GalleryImage", $"Вы пытаетесь загрузить {uploads.Count} изображений. Лимит галереи {Config.ImagesPerGallery} изображений. Вы можете загрузить еще {Config.ImagesPerGallery - imagesCount} изображений.");
+                ModelState.AddModelError("GalleryImage", $"Вы пытаетесь загрузить {uploads.Count} изображений. Лимит галереи {Config.ImagesPerGallery} изображений. Вы можете загрузить еще {Config.ImagesPerGallery - images.Count} изображений.");
             }
             // Если всё в порядке, заходим в ELSE
             else
@@ -264,20 +256,13 @@ namespace ASP_GalleryModule.Controllers
                     await cmsDB.SaveChangesAsync();
                 }
 
-                // Пересоздаем список изображений для вывода в представление, с учетом только что добавленных изображений
-                List<GalleryImage> images2 = await cmsDB.GalleryImages.Where(i => i.GalleryId == model.GalleryId).OrderByDescending(i=>i.ImageDate).ToListAsync();
-                model.GalleryImages = images2;
-                model.ImagesCount = images2.Count;
-
                 // Выводим обновленную модель в представление
-                //return View(model);
                 return RedirectToAction("ViewGallery", "Gallery", new { galleryId = model.GalleryId });
             }
 
-            // В случае, если при редактировании пытаться загрузить картинку выше разрешенного лимита, то перестают отображаться уже имеющиеся изображения
+            // В случае, если произошла ошибка валидации, требуется заново присвоить список изображений и счетчик для возвращаемой модели
             // При перегонке модели из гет в пост, теряется список с изображениями. Причина пока не ясна, поэтому сделал такой костыль
             // Счетчик соответственно тоже обнулялся, поэтому его тоже приходится переназначать заново
-            List<GalleryImage> images = await cmsDB.GalleryImages.Where(i => i.GalleryId == model.GalleryId).OrderByDescending(i => i.ImageDate).ToListAsync();
             model.GalleryImages = images;
             model.ImagesCount = images.Count;
 
