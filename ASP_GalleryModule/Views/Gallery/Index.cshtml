@@ -10,7 +10,8 @@
     {
         <tr>
             <td width="300">
-                КАРТИНКА-ПРЕВЬЮШКА
+                КАРТИНКА-ПРЕВЬЮШКА<br />
+                @Html.ActionLink("Удалить галерею", "DeleteGallery", "Gallery", new { galleryId = gallery.Id })
             </td>
             <td>
                 @Html.ActionLink(gallery.GalleryTitle, "ViewGallery", "Gallery", new { galleryId = gallery.Id })<br />

@@ -18,7 +18,8 @@
     </div>
     <div>
         <font color="red">@Html.ValidationMessageFor(f => f.GalleryImage)</font><br />
-            <input type="file" name="uploads" accept=".jpg,.jpeg,.png" multiple="" /><br />
+        <label asp-for="GalleryImage"></label><br />
+        <input type="file" name="uploads" accept=".jpg,.jpeg,.png" multiple="" /><br />
     </div>
     <div>
         <input type="submit" value="Добавить" />

@@ -305,6 +305,43 @@ namespace ASP_GalleryModule.Controllers
         }
         #endregion
 
+        #region Удалить галерею [GET]
+        public async Task<IActionResult> DeleteGallery(Guid galleryId)
+        {
+            Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == galleryId);
+            List<GalleryImage> galleryImages = await cmsDB.GalleryImages.Where(i => i.GalleryId == galleryId).ToListAsync();
+
+            if (galleryImages.Count > 0)
+            {
+                foreach (var galleryImage in galleryImages)
+                {
+                    // Делаем еще одну проверку. Лучше перебдеть. Если все ок, заходим в тело условия и удаляем изображения
+                    if (galleryImage != null)
+                    {
+                        // Исходные (полноразмерные) изображения
+                        FileInfo imageNormal = new FileInfo(_appEnvironment.WebRootPath + galleryImage.ImagePathNormal);
+                        if (imageNormal.Exists)
+                        {
+                            imageNormal.Delete();
+                        }
+                        // И их уменьшенные копии
+                        FileInfo imageScaled = new FileInfo(_appEnvironment.WebRootPath + galleryImage.ImagePathScaled);
+                        if (imageScaled.Exists)
+                        {
+                            imageScaled.Delete();
+                        }
+                        // Удаляем информацию об изображениях из БД и сохраняем
+                        cmsDB.GalleryImages.Remove(galleryImage);
+                    }
+                }
+            }
+
+            cmsDB.Galleries.Remove(gallery);
+            await cmsDB.SaveChangesAsync();
+
+            return RedirectToAction("Index", "Gallery");
+        }
+        #endregion
 
     }
 }
