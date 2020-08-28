@@ -125,14 +125,7 @@ namespace ASP_GalleryModule.Controllers
             // Создаем экземпляр класса Gallery и присваиваем ему значения из БД
             Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == galleryId);
             // Создаем список изображений из БД, закрепленных за выбранной галереей
-            List<GalleryImage> images = new List<GalleryImage>();
-            foreach (var image in cmsDB.GalleryImages)
-            {
-                if (image.GalleryId == galleryId)
-                {
-                    images.Add(image);
-                }
-            }
+            List<GalleryImage> images = await cmsDB.GalleryImages.Where(i => i.GalleryId == galleryId).OrderByDescending(i=>i.ImageDate).ToListAsync();
 
             // Создаем модель для передачи в представление и присваиваем значения
             ViewGalleryViewModel model = new ViewGalleryViewModel()
@@ -229,7 +222,7 @@ namespace ASP_GalleryModule.Controllers
                             // Создаем сообщение об ошибке для вывода пользователю
                             ModelState.AddModelError("GalleryImage", $"Файл {uploadedImage.FileName} имеет неверный формат.");
 
-                            // Удаляем только что созданные файлы (если ошибка возникла не на первом файле)
+                            // Удаляем только что созданные файлы (если ошибка возникла не на первом файле и некоторые уже были загружены на сервер)
                             foreach (var image in galleryImages)
                             {
                                 // Исходные (полноразмерные) изображения
@@ -256,7 +249,8 @@ namespace ASP_GalleryModule.Controllers
                             ImageName = newFileName,
                             ImagePathNormal = pathNormal,
                             ImagePathScaled = pathScaled,
-                            GalleryId = model.GalleryId
+                            GalleryId = model.GalleryId,
+                            ImageDate = DateTime.Now
                         };
                         // Добавляем объект galleryImage в список galleryImages
                         galleryImages.Add(galleryImage);
@@ -271,14 +265,7 @@ namespace ASP_GalleryModule.Controllers
                 }
 
                 // Пересоздаем список изображений для вывода в представление, с учетом только что добавленных изображений
-                List<GalleryImage> images2 = new List<GalleryImage>();
-                foreach (var image in cmsDB.GalleryImages)
-                {
-                    if (image.GalleryId == model.GalleryId)
-                    {
-                        images2.Add(image);
-                    }
-                }
+                List<GalleryImage> images2 = await cmsDB.GalleryImages.Where(i => i.GalleryId == model.GalleryId).OrderByDescending(i=>i.ImageDate).ToListAsync();
                 model.GalleryImages = images2;
                 model.ImagesCount = images2.Count;
 
@@ -289,14 +276,7 @@ namespace ASP_GalleryModule.Controllers
             // В случае, если при редактировании пытаться загрузить картинку выше разрешенного лимита, то перестают отображаться уже имеющиеся изображения
             // При перегонке модели из гет в пост, теряется список с изображениями. Причина пока не ясна, поэтому сделал такой костыль
             // Счетчик соответственно тоже обнулялся, поэтому его тоже приходится переназначать заново
-            List<GalleryImage> images = new List<GalleryImage>();
-            foreach (var image in cmsDB.GalleryImages)
-            {
-                if (image.GalleryId == model.GalleryId)
-                {
-                    images.Add(image);
-                }
-            }
+            List<GalleryImage> images = await cmsDB.GalleryImages.Where(i => i.GalleryId == model.GalleryId).OrderByDescending(i => i.ImageDate).ToListAsync();
             model.GalleryImages = images;
             model.ImagesCount = images.Count;
 
