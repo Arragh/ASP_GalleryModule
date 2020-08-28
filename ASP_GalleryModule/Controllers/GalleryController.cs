@@ -99,7 +99,7 @@ namespace ASP_GalleryModule.Controllers
             if (imageToDeleteName != null)
             {
                 // Создаем экземпляр класса картинки и присваиваем ему данные из БД
-                GalleryImage galleryImage = await cmsDB.GalleryImages.FirstAsync(i => i.ImageName == imageToDeleteName);
+                GalleryImage galleryImage = await cmsDB.GalleryImages.FirstOrDefaultAsync(i => i.ImageName == imageToDeleteName);
 
                 // Делаем еще одну проверку. Лучше перебдеть. Если все ок, заходим в тело условия и удаляем изображения
                 if (galleryImage != null)
@@ -270,7 +270,8 @@ namespace ASP_GalleryModule.Controllers
                 model.ImagesCount = images2.Count;
 
                 // Выводим обновленную модель в представление
-                return View(model);
+                //return View(model);
+                return RedirectToAction("ViewGallery", "Gallery", new { galleryId = model.GalleryId });
             }
 
             // В случае, если при редактировании пытаться загрузить картинку выше разрешенного лимита, то перестают отображаться уже имеющиеся изображения
