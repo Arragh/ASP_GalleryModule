@@ -122,7 +122,7 @@ namespace ASP_GalleryModule.Controllers
                         GalleryTitle = model.GalleryTitle,
                         GalleryDescription = model.GalleryDescription,
                         GalleryDate = DateTime.Now,
-                        UserName = "Mnemonic",
+                        UserName = "Mnemonic", // Хардкод. Потом обязательно заменить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         GalleryPreviewImage = pathPreview
                     };
 
@@ -140,9 +140,9 @@ namespace ASP_GalleryModule.Controllers
                         GalleryTitle = model.GalleryTitle,
                         GalleryDescription = model.GalleryDescription,
                         GalleryDate = DateTime.Now,
-                        UserName = "Mnemonic",
+                        UserName = "Mnemonic", // Хардкод. Потом обязательно заменить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         // Вбиваем картинку-заглушку
-                        GalleryPreviewImage = "/files/images/preview/nopreview.jpg" // пока хардкодом
+                        GalleryPreviewImage = "/files/images/preview/nopreview.jpg" // Хардкод. Потом обязательно заменить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     };
 
                     await cmsDB.Galleries.AddAsync(gallery);
@@ -366,7 +366,7 @@ namespace ASP_GalleryModule.Controllers
 
             if (ModelState.IsValid)
             {
-                // Если размер входного файла больше 0, заходим в тело условия
+                // Если исходный файл не равен NULL и его размер больше 0, заходим в тело условия
                 if (previewImage != null && previewImage.Length > 0)
                 {
                     // Создаем новый объект класса FileInfo из полученного изображения для дальнейшей обработки
@@ -407,7 +407,8 @@ namespace ASP_GalleryModule.Controllers
 
                     Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == model.GalleryId);
 
-                    if (gallery.GalleryPreviewImage != "/files/images/preview/nopreview.jpg")
+                    // Если до этого превьюшка была не по дефолту, удаляем её с сервера
+                    if (gallery.GalleryPreviewImage != "/files/images/preview/nopreview.jpg") // Хардкод. Потом обязательно заменить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     {
                         FileInfo imageToDelete = new FileInfo(_appEnvironment.WebRootPath + gallery.GalleryPreviewImage);
                         if (imageToDelete.Exists)
@@ -416,10 +417,13 @@ namespace ASP_GalleryModule.Controllers
                         }
                     }
 
+                    // Обновляем значения на полученные с формы
                     gallery.GalleryTitle = model.GalleryTitle;
                     gallery.GalleryDescription = model.GalleryDescription;
                     gallery.GalleryPreviewImage = pathPreview;
 
+
+                    // Сохраняем изменения в БД
                     cmsDB.Galleries.Update(gallery);
                     await cmsDB.SaveChangesAsync();
 
@@ -477,7 +481,7 @@ namespace ASP_GalleryModule.Controllers
             }
 
             // Удаляем превью-изображение (если оно не по дефолту)
-            if (gallery.GalleryPreviewImage != "/files/images/preview/nopreview.jpg")
+            if (gallery.GalleryPreviewImage != "/files/images/preview/nopreview.jpg") // Хардкод. Потом обязательно заменить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             {
                 FileInfo previewImage = new FileInfo(_appEnvironment.WebRootPath + gallery.GalleryPreviewImage);
                 if (previewImage.Exists)
