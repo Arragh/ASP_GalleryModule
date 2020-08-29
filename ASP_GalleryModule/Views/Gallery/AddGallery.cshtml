@@ -1,6 +1,6 @@
 ﻿@model ASP_GalleryModule.ViewModels.Gallery.AddGalleryViewModel
 
-<form asp-controller="Gallery" asp-action="AddGallery" method="post">
+<form asp-controller="Gallery" asp-action="AddGallery" method="post" enctype="multipart/form-data">
     <div>
         <label asp-for="GalleryTitle"></label><br />
         <input type="text" asp-for="GalleryTitle" width="300" />
@@ -9,7 +9,12 @@
     <div>
         <label asp-for="GalleryDescription"></label><br />
         <textarea asp-for="GalleryDescription" rows="30" cols="100"></textarea>
-        @Html.ValidationMessageFor(b => b.GalleryDescription)<br />
+        @Html.ValidationMessageFor(d => d.GalleryDescription)<br />
+    </div>
+    <div>
+        <label asp-for="GalleryPreviewImage"></label><br />
+        <input type="file" name="previewImage" accept=".jpg,.jpeg,.gif,.png" />
+        <font color="red">@Html.ValidationMessageFor(i => i.GalleryPreviewImage)</font>
     </div>
     <div>
         <input type="submit" value="Опубликовать" />

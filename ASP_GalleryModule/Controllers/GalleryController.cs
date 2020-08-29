@@ -68,25 +68,93 @@ namespace ASP_GalleryModule.Controllers
 
         #region Создать галерею [POST]
         [HttpPost]
-        public async Task<IActionResult> AddGallery(AddGalleryViewModel model)
+        public async Task<IActionResult> AddGallery(AddGalleryViewModel model, IFormFile previewImage)
         {
-            if (ModelState.IsValid)
+            if (previewImage != null && previewImage.Length > 2097152)
             {
-                Gallery gallery = new Gallery()
-                {
-                    Id = Guid.NewGuid(),
-                    GalleryTitle = model.GalleryTitle,
-                    GalleryDescription = model.GalleryDescription,
-                    GalleryDate = DateTime.Now,
-                    UserName = "Mnemonic"
-                };
-
-                await cmsDB.Galleries.AddAsync(gallery);
-                await cmsDB.SaveChangesAsync();
-
-                return RedirectToAction("Index", "Gallery");
+                ModelState.AddModelError("GalleryPreviewImage", $"Файл \"{previewImage.FileName}\" превышает установленный лимит 2MB.");
             }
 
+            if (ModelState.IsValid)
+            {
+                // Если размер входного файла больше 0, заходим в тело условия
+                if (previewImage != null && previewImage.Length > 0)
+                {
+                    // Создаем новый объект класса FileInfo из полученного изображения для дальнейшей обработки
+                    FileInfo imgFile = new FileInfo(previewImage.FileName);
+                    // Приводим расширение к нижнему регистру (если оно было в верхнем)
+                    string imgExtension = imgFile.Extension.ToLower();
+                    // Генерируем новое имя для файла
+                    string newFileName = Guid.NewGuid() + imgExtension;
+                    // Пути сохранения файла
+                    string pathPreview = "/files/images/preview/" + newFileName; // уменьшенное изображение
+
+                    // В операторе try/catch делаем уменьшенную копию изображения.
+                    // Если входным файлом окажется не изображение, нас перекинет в блок CATCH и выведет сообщение об ошибке
+                    try
+                    {
+                        // Создаем объект класса SixLabors.ImageSharp.Image и грузим в него полученное изображение
+                        using (Image image = Image.Load(previewImage.OpenReadStream()))
+                        {
+                            // Создаем уменьшенную копию и обрезаем её
+                            var clone = image.Clone(x => x.Resize(new ResizeOptions
+                            {
+                                Mode = ResizeMode.Crop,
+                                Size = new Size(300, 200)
+                            }));
+                            // Сохраняем уменьшенную копию
+                            await clone.SaveAsync(_appEnvironment.WebRootPath + pathPreview, new JpegEncoder { Quality = 50 });
+                        }
+                    }
+                    // Если вдруг что-то пошло не так (например, на вход подало не картинку), то выводим сообщение об ошибке
+                    catch
+                    {
+                        // Создаем сообщение об ошибке для вывода пользователю
+                        ModelState.AddModelError("GalleryPreviewImage", $"Файл {previewImage.FileName} имеет неверный формат.");
+
+                        // Удаляем только что созданные файлы (если ошибка возникла не на первом файле и некоторые уже были загружены на сервер)
+                        FileInfo imageToDelete = new FileInfo(_appEnvironment.WebRootPath + pathPreview);
+                        if (imageToDelete.Exists)
+                        {
+                            imageToDelete.Delete();
+                        }
+                        // Возвращаем модель с сообщением об ошибке в представление
+                        return View(model);
+                    }
+
+                    Gallery gallery = new Gallery()
+                    {
+                        Id = Guid.NewGuid(),
+                        GalleryTitle = model.GalleryTitle,
+                        GalleryDescription = model.GalleryDescription,
+                        GalleryDate = DateTime.Now,
+                        UserName = "Mnemonic",
+                        PreviewImage = pathPreview
+                    };
+
+                    await cmsDB.Galleries.AddAsync(gallery);
+                    await cmsDB.SaveChangesAsync();
+
+                    return RedirectToAction("Index", "Gallery");
+                }
+                else
+                {
+                    Gallery gallery = new Gallery()
+                    {
+                        Id = Guid.NewGuid(),
+                        GalleryTitle = model.GalleryTitle,
+                        GalleryDescription = model.GalleryDescription,
+                        GalleryDate = DateTime.Now,
+                        UserName = "Mnemonic",
+                        PreviewImage = "/files/images/preview/nopreview.jpg" // пока хардкодом
+                    };
+
+                    await cmsDB.Galleries.AddAsync(gallery);
+                    await cmsDB.SaveChangesAsync();
+
+                    return RedirectToAction("Index", "Gallery");
+                }
+            }
             return View(model);
         }
         #endregion
