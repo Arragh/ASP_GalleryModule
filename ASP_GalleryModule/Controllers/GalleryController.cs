@@ -123,7 +123,7 @@ namespace ASP_GalleryModule.Controllers
                         GalleryDescription = model.GalleryDescription,
                         GalleryDate = DateTime.Now,
                         UserName = "Mnemonic",
-                        PreviewImage = pathPreview
+                        GalleryPreviewImage = pathPreview
                     };
 
                     await cmsDB.Galleries.AddAsync(gallery);
@@ -142,7 +142,7 @@ namespace ASP_GalleryModule.Controllers
                         GalleryDate = DateTime.Now,
                         UserName = "Mnemonic",
                         // Вбиваем картинку-заглушку
-                        PreviewImage = "/files/images/preview/nopreview.jpg" // пока хардкодом
+                        GalleryPreviewImage = "/files/images/preview/nopreview.jpg" // пока хардкодом
                     };
 
                     await cmsDB.Galleries.AddAsync(gallery);
@@ -337,6 +337,114 @@ namespace ASP_GalleryModule.Controllers
         }
         #endregion
 
+        #region Редактировать галерею [GET]
+        [HttpGet]
+        public async Task<IActionResult> EditGallery(Guid galleryId)
+        {
+            Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == galleryId);
+
+            EditGalleryViewModel model = new EditGalleryViewModel()
+            {
+                GalleryId = galleryId,
+                GalleryTitle = gallery.GalleryTitle,
+                GalleryDescription = gallery.GalleryDescription,
+                GalleryPreviewImage = gallery.GalleryPreviewImage
+            };
+
+            return View(model);
+        }
+        #endregion
+
+        #region Редактировать галерею [POST]
+        [HttpPost]
+        public async Task<IActionResult> EditGallery(EditGalleryViewModel model, IFormFile previewImage)
+        {
+            if (previewImage != null && previewImage.Length > 2097152)
+            {
+                ModelState.AddModelError("GalleryPreviewImage", $"Файл \"{previewImage.FileName}\" превышает установленный лимит 2MB.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                // Если размер входного файла больше 0, заходим в тело условия
+                if (previewImage != null && previewImage.Length > 0)
+                {
+                    // Создаем новый объект класса FileInfo из полученного изображения для дальнейшей обработки
+                    FileInfo imgFile = new FileInfo(previewImage.FileName);
+                    // Приводим расширение к нижнему регистру (если оно было в верхнем)
+                    string imgExtension = imgFile.Extension.ToLower();
+                    // Генерируем новое имя для файла
+                    string newFileName = Guid.NewGuid() + imgExtension;
+                    // Пути сохранения файла
+                    string pathPreview = "/files/images/preview/" + newFileName; // уменьшенное изображение
+
+                    // В операторе try/catch делаем уменьшенную копию изображения.
+                    // Если входным файлом окажется не изображение, нас перекинет в блок CATCH и выведет сообщение об ошибке
+                    try
+                    {
+                        // Создаем объект класса SixLabors.ImageSharp.Image и грузим в него полученное изображение
+                        using (Image image = Image.Load(previewImage.OpenReadStream()))
+                        {
+                            // Создаем уменьшенную копию и обрезаем её
+                            var clone = image.Clone(x => x.Resize(new ResizeOptions
+                            {
+                                Mode = ResizeMode.Crop,
+                                Size = new Size(300, 200)
+                            }));
+                            // Сохраняем уменьшенную копию
+                            await clone.SaveAsync(_appEnvironment.WebRootPath + pathPreview, new JpegEncoder { Quality = 50 });
+                        }
+                    }
+                    // Если вдруг что-то пошло не так (например, на вход подало не картинку), то выводим сообщение об ошибке
+                    catch
+                    {
+                        // Создаем сообщение об ошибке для вывода пользователю
+                        ModelState.AddModelError("GalleryPreviewImage", $"Файл {previewImage.FileName} имеет неверный формат.");
+
+                        // Возвращаем модель с сообщением об ошибке в представление
+                        return View(model);
+                    }
+
+                    Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == model.GalleryId);
+
+                    if (gallery.GalleryPreviewImage != "/files/images/preview/nopreview.jpg")
+                    {
+                        FileInfo imageToDelete = new FileInfo(_appEnvironment.WebRootPath + gallery.GalleryPreviewImage);
+                        if (imageToDelete.Exists)
+                        {
+                            imageToDelete.Delete();
+                        }
+                    }
+
+                    gallery.GalleryTitle = model.GalleryTitle;
+                    gallery.GalleryDescription = model.GalleryDescription;
+                    gallery.GalleryPreviewImage = pathPreview;
+
+                    cmsDB.Galleries.Update(gallery);
+                    await cmsDB.SaveChangesAsync();
+
+                    return RedirectToAction("Index", "Gallery");
+                }
+                // Если не была выбрана картинка для превью, заходим в блок ELSE
+                else
+                {
+                    Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == model.GalleryId);
+
+                    gallery.GalleryTitle = model.GalleryTitle;
+                    gallery.GalleryDescription = model.GalleryDescription;
+
+                    cmsDB.Galleries.Update(gallery);
+                    await cmsDB.SaveChangesAsync();
+
+                    return RedirectToAction("Index", "Gallery");
+                }
+            }
+
+            // Возврат модели при неудачной валидации
+            return View(model);
+        }
+        #endregion
+
         #region Удалить галерею [GET]
         public async Task<IActionResult> DeleteGallery(Guid galleryId)
         {
@@ -369,9 +477,9 @@ namespace ASP_GalleryModule.Controllers
             }
 
             // Удаляем превью-изображение (если оно не по дефолту)
-            if (gallery.PreviewImage != "/files/images/preview/nopreview.jpg")
+            if (gallery.GalleryPreviewImage != "/files/images/preview/nopreview.jpg")
             {
-                FileInfo previewImage = new FileInfo(_appEnvironment.WebRootPath + gallery.PreviewImage);
+                FileInfo previewImage = new FileInfo(_appEnvironment.WebRootPath + gallery.GalleryPreviewImage);
                 if (previewImage.Exists)
                 {
                     previewImage.Delete();

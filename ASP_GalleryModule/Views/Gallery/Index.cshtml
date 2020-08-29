@@ -9,11 +9,12 @@
     @foreach (var gallery in Model.Galleries)
     {
         <tr>
-            <td width="300"><a asp-action="ViewGallery" asp-controller="Gallery" asp-route-galleryId="@gallery.Id"><img src="@Url.Content(gallery.PreviewImage)" /></a></td>
+            <td width="300"><a asp-action="ViewGallery" asp-controller="Gallery" asp-route-galleryId="@gallery.Id"><img src="@Url.Content(gallery.GalleryPreviewImage)" /></a></td>
             <td>
                 @Html.ActionLink(gallery.GalleryTitle, "ViewGallery", "Gallery", new { galleryId = gallery.Id })<br />
                 @gallery.GalleryDescription<br />
                 @Html.ActionLink("Удалить галерею", "DeleteGallery", "Gallery", new { galleryId = gallery.Id })
+                @Html.ActionLink("Редактировать", "EditGallery", "Gallery", new { galleryId = gallery.Id })
             </td>
         </tr>
     }

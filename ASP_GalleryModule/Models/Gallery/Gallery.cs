@@ -10,7 +10,7 @@ namespace ASP_GalleryModule.Models.Gallery
         public string GalleryDescription { get; set; }
         public DateTime GalleryDate { get; set; }
         public string UserName { get; set; }
-        public string PreviewImage { get; set; }
+        public string GalleryPreviewImage { get; set; }
         public virtual ICollection<GalleryImage> GalleryImages { get; set; }
     }
 }

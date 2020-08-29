@@ -1,0 +1,33 @@
+﻿@model ASP_GalleryModule.ViewModels.Gallery.EditGalleryViewModel
+
+<form asp-controller="Gallery" asp-action="EditGallery" method="post" enctype="multipart/form-data">
+    <div>
+        <input type="hidden" asp-for="GalleryId" value="@Model.GalleryId" />
+        <input type="hidden" asp-for="GalleryPreviewImage" value="@Model.GalleryPreviewImage" />
+    </div>
+    <div>
+        <label asp-for="GalleryTitle"></label><br />
+        <input type="text" asp-for="GalleryTitle" width="300" />
+        @Html.ValidationMessageFor(t => t.GalleryTitle)<br />
+    </div>
+    <div>
+        <label asp-for="GalleryDescription"></label><br />
+        <textarea asp-for="GalleryDescription" rows="30" cols="100"></textarea>
+        @Html.ValidationMessageFor(d => d.GalleryDescription)<br />
+    </div>
+    <div>
+        <label asp-for="GalleryPreviewImage"></label><br />
+        <input type="file" name="previewImage" accept=".jpg,.jpeg,.gif,.png" />
+        <font color="red">@Html.ValidationMessageFor(i => i.GalleryPreviewImage)</font>
+    </div>
+    <div>
+        <input type="submit" value="Сохранить" />
+    </div>
+</form>
+
+<img src="@Url.Content(Model.GalleryPreviewImage)" />
+
+@section scripts
+{
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
