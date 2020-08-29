@@ -368,6 +368,16 @@ namespace ASP_GalleryModule.Controllers
                 }
             }
 
+            // Удаляем превью-изображение (если оно не по дефолту)
+            if (gallery.PreviewImage != "/files/images/preview/nopreview.jpg")
+            {
+                FileInfo previewImage = new FileInfo(_appEnvironment.WebRootPath + gallery.PreviewImage);
+                if (previewImage.Exists)
+                {
+                    previewImage.Delete();
+                }
+            }
+
             cmsDB.Galleries.Remove(gallery);
             await cmsDB.SaveChangesAsync();
 
