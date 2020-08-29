@@ -112,12 +112,6 @@ namespace ASP_GalleryModule.Controllers
                         // Создаем сообщение об ошибке для вывода пользователю
                         ModelState.AddModelError("GalleryPreviewImage", $"Файл {previewImage.FileName} имеет неверный формат.");
 
-                        // Удаляем только что созданные файлы (если ошибка возникла не на первом файле и некоторые уже были загружены на сервер)
-                        FileInfo imageToDelete = new FileInfo(_appEnvironment.WebRootPath + pathPreview);
-                        if (imageToDelete.Exists)
-                        {
-                            imageToDelete.Delete();
-                        }
                         // Возвращаем модель с сообщением об ошибке в представление
                         return View(model);
                     }
@@ -137,6 +131,7 @@ namespace ASP_GalleryModule.Controllers
 
                     return RedirectToAction("Index", "Gallery");
                 }
+                // Если не была выбрана картинка для превью, заходим в блок ELSE
                 else
                 {
                     Gallery gallery = new Gallery()
@@ -146,6 +141,7 @@ namespace ASP_GalleryModule.Controllers
                         GalleryDescription = model.GalleryDescription,
                         GalleryDate = DateTime.Now,
                         UserName = "Mnemonic",
+                        // Вбиваем картинку-заглушку
                         PreviewImage = "/files/images/preview/nopreview.jpg" // пока хардкодом
                     };
 
@@ -155,6 +151,8 @@ namespace ASP_GalleryModule.Controllers
                     return RedirectToAction("Index", "Gallery");
                 }
             }
+
+            // Возврат модели при неудачной валидации
             return View(model);
         }
         #endregion
