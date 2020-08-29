@@ -12,9 +12,14 @@
             <td width="300"><a asp-action="ViewGallery" asp-controller="Gallery" asp-route-galleryId="@gallery.Id"><img src="@Url.Content(gallery.GalleryPreviewImage)" /></a></td>
             <td>
                 @Html.ActionLink(gallery.GalleryTitle, "ViewGallery", "Gallery", new { galleryId = gallery.Id })<br />
-                @gallery.GalleryDescription<br />
-                @Html.ActionLink("Удалить галерею", "DeleteGallery", "Gallery", new { galleryId = gallery.Id })
+                <span style="white-space: pre-line">@gallery.GalleryDescription</span><br />
                 @Html.ActionLink("Редактировать", "EditGallery", "Gallery", new { galleryId = gallery.Id })
+                <form asp-action="DeleteGallery" asp-controller="Gallery" method="post">
+                    <input type="hidden" name="galleryId" value="@gallery.Id" />
+                    <input type="checkbox" name="isChecked" value="true" />
+                    <span>Подтвердить удаление</span>
+                    <input type="submit" value="Удалить" />
+                </form>
             </td>
         </tr>
     }
@@ -22,6 +27,7 @@
 
 <br />
 <br />
+
 <center>
     @for (int i = 1; i <= Model.TotalPages; i++)
     {

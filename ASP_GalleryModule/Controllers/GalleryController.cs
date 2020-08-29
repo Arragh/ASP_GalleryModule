@@ -70,6 +70,7 @@ namespace ASP_GalleryModule.Controllers
         [HttpPost]
         public async Task<IActionResult> AddGallery(AddGalleryViewModel model, IFormFile previewImage)
         {
+            // Проверяем, чтобы входящий файл был не NULL и имел допустимый размер в мегабайтах
             if (previewImage != null && previewImage.Length > 2097152)
             {
                 ModelState.AddModelError("GalleryPreviewImage", $"Файл \"{previewImage.FileName}\" превышает установленный лимит 2MB.");
@@ -450,48 +451,51 @@ namespace ASP_GalleryModule.Controllers
         #endregion
 
         #region Удалить галерею [GET]
-        public async Task<IActionResult> DeleteGallery(Guid galleryId)
+        public async Task<IActionResult> DeleteGallery(Guid galleryId, bool isChecked)
         {
-            Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == galleryId);
-            List<GalleryImage> galleryImages = await cmsDB.GalleryImages.Where(i => i.GalleryId == galleryId).ToListAsync();
-
-            if (galleryImages.Count > 0)
+            if (isChecked)
             {
-                foreach (var galleryImage in galleryImages)
+                Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == galleryId);
+                List<GalleryImage> galleryImages = await cmsDB.GalleryImages.Where(i => i.GalleryId == galleryId).ToListAsync();
+
+                if (galleryImages.Count > 0)
                 {
-                    // Делаем еще одну проверку. Лучше перебдеть. Если все ок, заходим в тело условия и удаляем изображения
-                    if (galleryImage != null)
+                    foreach (var galleryImage in galleryImages)
                     {
-                        // Исходные (полноразмерные) изображения
-                        FileInfo imageNormal = new FileInfo(_appEnvironment.WebRootPath + galleryImage.ImagePathNormal);
-                        if (imageNormal.Exists)
+                        // Делаем еще одну проверку. Лучше перебдеть. Если все ок, заходим в тело условия и удаляем изображения
+                        if (galleryImage != null)
                         {
-                            imageNormal.Delete();
+                            // Исходные (полноразмерные) изображения
+                            FileInfo imageNormal = new FileInfo(_appEnvironment.WebRootPath + galleryImage.ImagePathNormal);
+                            if (imageNormal.Exists)
+                            {
+                                imageNormal.Delete();
+                            }
+                            // И их уменьшенные копии
+                            FileInfo imageScaled = new FileInfo(_appEnvironment.WebRootPath + galleryImage.ImagePathScaled);
+                            if (imageScaled.Exists)
+                            {
+                                imageScaled.Delete();
+                            }
+                            // Удаляем информацию об изображениях из БД и сохраняем
+                            cmsDB.GalleryImages.Remove(galleryImage);
                         }
-                        // И их уменьшенные копии
-                        FileInfo imageScaled = new FileInfo(_appEnvironment.WebRootPath + galleryImage.ImagePathScaled);
-                        if (imageScaled.Exists)
-                        {
-                            imageScaled.Delete();
-                        }
-                        // Удаляем информацию об изображениях из БД и сохраняем
-                        cmsDB.GalleryImages.Remove(galleryImage);
                     }
                 }
-            }
 
-            // Удаляем превью-изображение (если оно не по дефолту)
-            if (gallery.GalleryPreviewImage != "/files/images/preview/nopreview.jpg") // Хардкод. Потом обязательно заменить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            {
-                FileInfo previewImage = new FileInfo(_appEnvironment.WebRootPath + gallery.GalleryPreviewImage);
-                if (previewImage.Exists)
+                // Удаляем превью-изображение (если оно не по дефолту)
+                if (gallery.GalleryPreviewImage != "/files/images/preview/nopreview.jpg") // Хардкод. Потом обязательно заменить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 {
-                    previewImage.Delete();
+                    FileInfo previewImage = new FileInfo(_appEnvironment.WebRootPath + gallery.GalleryPreviewImage);
+                    if (previewImage.Exists)
+                    {
+                        previewImage.Delete();
+                    }
                 }
-            }
 
-            cmsDB.Galleries.Remove(gallery);
-            await cmsDB.SaveChangesAsync();
+                cmsDB.Galleries.Remove(gallery);
+                await cmsDB.SaveChangesAsync();
+            }
 
             return RedirectToAction("Index", "Gallery");
         }
