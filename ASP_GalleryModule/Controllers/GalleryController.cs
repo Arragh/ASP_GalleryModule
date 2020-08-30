@@ -192,7 +192,7 @@ namespace ASP_GalleryModule.Controllers
             // Создаем экземпляр класса Gallery и присваиваем ему значения из БД
             Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == galleryId);
             // Создаем список изображений из БД, закрепленных за выбранной галереей
-            List<GalleryImage> images = await cmsDB.GalleryImages.Where(i => i.GalleryId == galleryId).OrderByDescending(i=>i.ImageDate).ToListAsync();
+            List<GalleryImage> images = await cmsDB.GalleryImages.Where(i => i.GalleryId == galleryId).OrderByDescending(i => i.ImageDate).ToListAsync();
 
             // Создаем модель для передачи в представление и присваиваем значения
             ViewGalleryViewModel model = new ViewGalleryViewModel()
@@ -342,8 +342,10 @@ namespace ASP_GalleryModule.Controllers
         [HttpGet]
         public async Task<IActionResult> EditGallery(Guid galleryId)
         {
+            // Находим галерею по Id
             Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == galleryId);
 
+            // Создаем модель для передачи в представление
             EditGalleryViewModel model = new EditGalleryViewModel()
             {
                 GalleryId = galleryId,
@@ -352,6 +354,7 @@ namespace ASP_GalleryModule.Controllers
                 GalleryPreviewImage = gallery.GalleryPreviewImage
             };
 
+            // Возвращаем модель в представление
             return View(model);
         }
         #endregion
@@ -360,11 +363,13 @@ namespace ASP_GalleryModule.Controllers
         [HttpPost]
         public async Task<IActionResult> EditGallery(EditGalleryViewModel model, IFormFile previewImage)
         {
-            if (previewImage != null && previewImage.Length > 2097152)
+            // Если размер превью-изображения превышает установленный лимит, генерируем ошибку модели
+            if (previewImage != null && previewImage.Length > 2097152) // Хардкод. Потом обязательно заменить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             {
                 ModelState.AddModelError("GalleryPreviewImage", $"Файл \"{previewImage.FileName}\" превышает установленный лимит 2MB.");
             }
 
+            // Если ошибок не возникло, заходим в тело условия
             if (ModelState.IsValid)
             {
                 // Если исходный файл не равен NULL и его размер больше 0, заходим в тело условия
@@ -433,11 +438,14 @@ namespace ASP_GalleryModule.Controllers
                 // Если не была выбрана картинка для превью, заходим в блок ELSE
                 else
                 {
+                    // Выбираем галерею из БД по Id
                     Gallery gallery = await cmsDB.Galleries.FirstAsync(g => g.Id == model.GalleryId);
 
+                    // Обновляем значения на полученные с формы
                     gallery.GalleryTitle = model.GalleryTitle;
                     gallery.GalleryDescription = model.GalleryDescription;
 
+                    // Сохраняем изменения в БД
                     cmsDB.Galleries.Update(gallery);
                     await cmsDB.SaveChangesAsync();
 

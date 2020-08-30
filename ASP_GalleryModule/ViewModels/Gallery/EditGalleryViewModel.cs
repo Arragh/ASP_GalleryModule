@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ASP_GalleryModule.ViewModels.Gallery
 {
@@ -22,7 +19,7 @@ namespace ASP_GalleryModule.ViewModels.Gallery
         [DataType(DataType.Text)]
         public string GalleryDescription { get; set; }
 
-        [Display(Name = "Превью")]
+        [Display(Name = "Превью-Картинка")]
         public string GalleryPreviewImage { get; set; }
     }
 }
